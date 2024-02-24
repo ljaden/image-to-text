@@ -5,23 +5,26 @@ import { createWorker } from 'tesseract.js';
 
 const Home = () => {
   const [imageDataArray, setImageDataArray] = useState<(string | null)[]>([]);
-  const loadFiles = (files: FileList) => {
-    const imagePromises = Array.from(files).map(file => {
-      return new Promise<string | null>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const imageDataUri = reader.result;
-          resolve(imageDataUri as string);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
 
-    Promise.all(imagePromises).then(imageDataArray => {
-      setImageDataArray(imageDataArray);
-    });
-  };
+const loadFiles = (files: File[]) => {
+  const dataTransfer = new DataTransfer();
+  files.forEach(file => dataTransfer.items.add(file));
 
+  const imagePromises = Array.from(dataTransfer.files).map(file => {
+    return new Promise<string | null>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageDataUri = reader.result;
+        resolve(imageDataUri as string);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  Promise.all(imagePromises).then(imageDataArray => {
+    setImageDataArray(imageDataArray);
+  });
+};
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState('idle');
   const [ocrResults, setOcrResults] = useState<string[]>([]);
@@ -57,7 +60,9 @@ const handleExtract = async () => {
       const response = await worker.recognize(imageData!);
         const regex = /\b\d{12}\b/g;
         const match = response.data.text.match(regex)
-      setOcrResults(prevResults => [...prevResults, match[0]]); // Store OCR result in state
+        if (match) {
+          setOcrResults(prevResults => [...prevResults, match[0]]); // Store OCR result in state
+        }
     } catch (error) {
       console.error('Error during OCR:', error);
     }
