@@ -58,7 +58,7 @@ const handleExtract = async () => {
   for (const imageData of imageDataArray) {
     try {
       const response = await worker.recognize(imageData!);
-        const regex = /\b\d{12}\b/g;
+        const regex = /\b\d{12,13}\b/g;
         const match = response.data.text.match(regex)
         if (match) {
           setOcrResults(prevResults => [...prevResults, match[0]]); // Store OCR result in state
